@@ -22,6 +22,8 @@ ScrollDesktop.license  = "MIT - https://opensource.org/licenses/MIT"
 
 function ScrollDesktop:start()
    self.triggerSwipe = false
+   self.exemptWindow = nil
+   self.onlyWindow = nil
    self.currentWindows = nil
    self.positions = {}
    self.xmax = hs.screen.mainScreen():fullFrame().w
@@ -30,34 +32,58 @@ function ScrollDesktop:start()
 	 local dx = event:getProperty(hs.eventtap.event.properties.scrollWheelEventPointDeltaAxis2)
 	 local begin = event:getProperty(hs.eventtap.event.properties.scrollWheelEventScrollPhase) == 1
 	 if begin then
-	    self.triggerSwipe = get_window_under_mouse() == nil or hs.eventtap.checkKeyboardModifiers().cmd
+	    local window = get_window_under_mouse()
+	    local mod = hs.eventtap.checkKeyboardModifiers()
+	    self.triggerSwipe = window == nil or mod.cmd
+	    if mod.shift then
+	       self.exemptWindow = window:id()
+	    else
+	       self.exemptWindow = nil
+	    end
+	    if mod.alt then
+	       self.onlyWindow = window
+	    else
+	       self.onlyWindow = nil
+	    end
 	 end
 	 if self.triggerSwipe then
 	    if begin then
-	       self.currentWindows = hs.window.orderedWindows()
+	       if self.onlyWindow == nil then
+		  self.currentWindows = hs.window.orderedWindows()
+	       else
+		  self.currentWindows = {self.onlyWindow}
+		  self.onlyWindow:focus()
+	       end
 	    end
 	    for i, window in pairs(self.currentWindows) do
 	       local id = window:id()
-	       local topleft = self.positions[id]
-	       if self.positions[id] == nil then
-		  topleft = window:topLeft()
-	       end
-	       local x = topleft.x+dx
-	       local outside = false
-	       if x > self.xmax-1 then
-		  self.positions[id] = {x=topleft.x+dx, y=topleft.y}
-		  x = self.xmax-1
-		  outside = true
-	       else
-		  local minx = -window:size().w
-		  if x < minx+1 then
-		     self.positions[id] = {x=topleft.x+dx, y=topleft.y}
-		     x = minx+1
-		     outside = true
+	       if id ~= self.exemptWindow then
+		  local topleft = self.positions[id]
+		  if self.positions[id] == nil then
+		     topleft = window:topLeft()
 		  end
+		  local x = topleft.x+dx
+		  local outside = false
+		  if x > self.xmax-1 then
+		     self.positions[id] = {x=topleft.x+dx, y=topleft.y}
+		     x = self.xmax-1
+		     outside = true
+		  else
+		     local minx = -window:size().w
+		     if x < minx+1 then
+			self.positions[id] = {x=topleft.x+dx, y=topleft.y}
+			x = minx+1
+			outside = true
+		     end
+		  end
+		  if self.onlyWindow ~= nil then
+		     local pos = hs.mouse.getRelativePosition()
+		     pos.x = pos.x+x-window:topLeft().x
+		     hs.mouse.setRelativePosition(pos)
+		  end
+		  window:setTopLeft(x, topleft.y)
+		  if not outside then self.positions[id] = nil end
 	       end
-	       window:setTopLeft(x, topleft.y)
-	       if not outside then self.positions[id] = nil end
 	    end
 	    return true
 	 end
