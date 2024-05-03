@@ -1,3 +1,4 @@
+-- from https://gist.github.com/kizzx2/e542fa74b80b7563045a
 function get_window_under_mouse()
   -- Invoke `hs.application` because `hs.window.orderedWindows()` doesn't do it
   -- and breaks itself
