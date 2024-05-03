@@ -7,3 +7,5 @@ ScrollDesktop is a plugin for [Hammerspoon] and is inspired by
 
 [Hammerspoon]: https://www.hammerspoon.org/
 [PaperWM.spoon]: https://github.com/mogenson/PaperWM.spoon
+
+https://github.com/jocap/ScrollDesktop.spoon/assets/92702/c434a79b-3885-46b6-af8c-e73f0fa17a8c
