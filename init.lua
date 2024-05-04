@@ -24,6 +24,7 @@ function ScrollDesktop:start()
    self.triggerSwipe = false
    self.exemptWindow = nil
    self.onlyWindow = nil
+   self.onlyRightOf = nil
    self.currentWindows = nil
    self.positions = {}
    self.xmax = hs.screen.mainScreen():fullFrame().w
@@ -35,15 +36,20 @@ function ScrollDesktop:start()
 	    local window = get_window_under_mouse()
 	    local mod = hs.eventtap.checkKeyboardModifiers()
 	    self.triggerSwipe = window == nil or mod.cmd
-	    if mod.shift then
+	    if window ~= nil and mod.shift then
 	       self.exemptWindow = window:id()
 	    else
 	       self.exemptWindow = nil
 	    end
-	    if mod.alt then
+	    if window ~= nil and mod.alt then
 	       self.onlyWindow = window
 	    else
 	       self.onlyWindow = nil
+	    end
+	    if mod.ctrl then
+	       self.onlyRightOf = hs.mouse:getRelativePosition().x
+	    else
+	       self.onlyRightOf = nil
 	    end
 	 end
 	 if self.triggerSwipe then
@@ -62,27 +68,39 @@ function ScrollDesktop:start()
 		  if self.positions[id] == nil then
 		     topleft = window:topLeft()
 		  end
+		  local allow = true
 		  local x = topleft.x+dx
-		  local outside = false
-		  if x > self.xmax-1 then
-		     self.positions[id] = {x=topleft.x+dx, y=topleft.y}
-		     x = self.xmax-1
-		     outside = true
-		  else
-		     local minx = -window:size().w
-		     if x < minx+1 then
-			self.positions[id] = {x=topleft.x+dx, y=topleft.y}
-			x = minx+1
-			outside = true
+		  if self.onlyRightOf ~= nil then
+		     local diff = topleft.x-self.onlyRightOf
+		     if diff < 0 or diff == 0 and dx < 0 then
+			allow = false
+		     end
+		     if topleft.x+dx <= self.onlyRightOf then
+			x = self.onlyRightOf+1
 		     end
 		  end
-		  if self.onlyWindow ~= nil then
-		     local pos = hs.mouse.getRelativePosition()
-		     pos.x = pos.x+x-window:topLeft().x
-		     hs.mouse.setRelativePosition(pos)
+		  if allow then
+		     local outside = false
+		     if x > self.xmax-1 then
+			self.positions[id] = {x=topleft.x+dx, y=topleft.y}
+			x = self.xmax-1
+			outside = true
+		     else
+			local minx = -window:size().w
+			if x < minx+1 then
+			   self.positions[id] = {x=topleft.x+dx, y=topleft.y}
+			   x = minx+1
+			   outside = true
+			end
+		     end
+		     if self.onlyWindow ~= nil then
+			local pos = hs.mouse.getRelativePosition()
+			pos.x = pos.x+x-window:topLeft().x
+			hs.mouse.setRelativePosition(pos)
+		     end
+		     window:setTopLeft(x, topleft.y)
+		     if not outside then self.positions[id] = nil end
 		  end
-		  window:setTopLeft(x, topleft.y)
-		  if not outside then self.positions[id] = nil end
 	       end
 	    end
 	    return true

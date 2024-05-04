@@ -2,8 +2,10 @@ Scrollable window manager for Mac OS X.  With the pointer above the
 desktop or the Command key pressed, scroll left or right to move
 windows across a virtual infinitely wide horizontal plane.
 
-When Shift is held, the window under the cursor stays in place.
-When Option is held, only the window under the pointer is scrolled.
+When Shift is held, the window under the cursor stays in place.  When
+Option is held, only the window under the pointer is scrolled.  When
+Control is held, only the windows to the right of the cursor are
+scrolled.
 
 ScrollDesktop is a plugin for [Hammerspoon] and is inspired by
 [PaperWM.spoon].
